@@ -56,32 +56,38 @@ namespace GenArt
                 currentDrawing = GetNewInitializedDrawing();
             lastSelected = 0;
 
-            while (isRunning)
+            using (var fitnessCalculator = new FitnessCalculator())
             {
-                DnaDrawing newDrawing;
-                lock (currentDrawing)
+                while (isRunning)
                 {
-                    newDrawing = currentDrawing.Clone();
-                }
-                newDrawing.Mutate();
-
-                if (newDrawing.IsDirty)
-                {
-                    generation++;
-
-                    double newErrorLevel = FitnessCalculator.GetDrawingFitness(newDrawing, sourceColors);
-
-                    if (newErrorLevel <= errorLevel)
+                    DnaDrawing newDrawing;
+                    lock (currentDrawing)
                     {
-                        selected++;
-                        lock (currentDrawing)
-                        {
-                            currentDrawing = newDrawing;
-                        }
-                        errorLevel = newErrorLevel;
+                        newDrawing = currentDrawing.Clone();
                     }
+
+                    newDrawing.Mutate();
+
+                    if (newDrawing.IsDirty)
+                    {
+                        generation++;
+
+                        double newErrorLevel = fitnessCalculator.GetDrawingFitness(newDrawing, sourceColors);
+
+                        if (newErrorLevel <= errorLevel)
+                        {
+                            selected++;
+                            lock (currentDrawing)
+                            {
+                                currentDrawing = newDrawing;
+                            }
+
+                            errorLevel = newErrorLevel;
+                        }
+                    }
+
+                    //else, discard new drawing
                 }
-                //else, discard new drawing
             }
         }
 
