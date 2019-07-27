@@ -24,7 +24,7 @@ namespace GenArt
         private int repaintOnSelectedSteps = 3;
         private int selected;
         private SettingsForm settingsForm;
-        private Color[,] sourceColors;
+        private Pixel[] sourcePixels;
 
         private Thread thread;
 
@@ -72,7 +72,7 @@ namespace GenArt
                     {
                         generation++;
 
-                        double newErrorLevel = fitnessCalculator.GetDrawingFitness(newDrawing, sourceColors);
+                        double newErrorLevel = fitnessCalculator.GetDrawingFitness(newDrawing, sourcePixels);
 
                         if (newErrorLevel <= errorLevel)
                         {
@@ -91,23 +91,30 @@ namespace GenArt
             }
         }
 
-        //covnerts the source image to a Color[,] for faster lookup
+        //converts the source image to a Color[,] for faster lookup
         private void SetupSourceColorMatrix()
         {
-            sourceColors = new Color[Tools.MaxWidth,Tools.MaxHeight];
             var sourceImage = picPattern.Image as Bitmap;
 
             if (sourceImage == null)
                 throw new NotSupportedException("A source image of Bitmap format must be provided");
 
-            for (int y = 0; y < Tools.MaxHeight; y++)
+            BitmapData bd = sourceImage.LockBits(
+                new Rectangle(0, 0, Tools.MaxWidth, Tools.MaxHeight),
+                ImageLockMode.ReadOnly,
+                PixelFormat.Format32bppArgb);
+            sourcePixels = new Pixel[Tools.MaxWidth * Tools.MaxHeight];
+            unsafe
             {
-                for (int x = 0; x < Tools.MaxWidth; x++)
+                fixed (Pixel* psourcePixels = sourcePixels)
                 {
-                    Color c = sourceImage.GetPixel(x, y);
-                    sourceColors[x, y] = c;
+                    Pixel* pSrc = (Pixel*)bd.Scan0.ToPointer();
+                    Pixel* pDst = psourcePixels;
+                    for (int i = sourcePixels.Length; i > 0; i--)
+                        *(pDst++) = *(pSrc++);
                 }
             }
+            sourceImage.UnlockBits(bd);
         }
 
 

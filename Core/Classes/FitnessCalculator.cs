@@ -5,6 +5,14 @@ using GenArt.AST;
 
 namespace GenArt.Classes
 {
+   public struct Pixel
+    {
+        public byte B;
+        public byte G;
+        public byte R;
+        public byte A;
+    }
+
     public class FitnessCalculator : IDisposable
     {
         private readonly Bitmap b;
@@ -22,7 +30,7 @@ namespace GenArt.Classes
             b.Dispose();
         }
 
-        public double GetDrawingFitness(DnaDrawing newDrawing, Color[,] sourceColors)
+        public double GetDrawingFitness(DnaDrawing newDrawing, Pixel[] sourcePixels)
         {
             double error = 0;
 
@@ -35,19 +43,20 @@ namespace GenArt.Classes
             {
                 unsafe
                 {
-                    for (int y = 0; y < Tools.MaxHeight; y++)
+                    fixed (Pixel *psourcePixels = sourcePixels)
                     {
-                        for (int x = 0; x < Tools.MaxWidth; x++)
+                        Pixel* pc = psourcePixels;
+                        for (int y = 0; y < Tools.MaxHeight; y++)
                         {
-                            byte* p = (byte*) bmd1.Scan0 + y * bmd1.Stride + 3 * x;
-                            Color c1 = Color.FromArgb(p[2], p[1], p[0]);
-                            Color c2 = sourceColors[x, y];
+                            byte* p = (byte*) bmd1.Scan0 + y * bmd1.Stride;
+                            for(int x = 0; x < Tools.MaxWidth; x++, p+= 4, pc++)
+                            {
+                                int r = p[2] - pc->R;
+                                int g = p[1] - pc->G;
+                                int b = p[0] - pc->B;
 
-                            int r = c1.R - c2.R;
-                            int g = c1.G - c2.G;
-                            int b = c1.B - c2.B;
-
-                            error += r * r + g * g + b * b;
+                                error += r * r + g * g + b * b;
+                            }
                         }
                     }
                 }
