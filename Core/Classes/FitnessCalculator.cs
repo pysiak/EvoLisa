@@ -49,7 +49,7 @@ namespace GenArt.Classes
                         for (int y = 0; y < Tools.MaxHeight; y++)
                         {
                             byte* p = (byte*) bmd1.Scan0 + y * bmd1.Stride;
-                            for(int x = 0; x < Tools.MaxWidth; x++, p+= 4, pc++)
+                            for(int x = 0; x < Tools.MaxWidth; x++, p+= 3, pc++)
                             {
                                 int r = p[2] - pc->R;
                                 int g = p[1] - pc->G;
